@@ -2,7 +2,11 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"strings"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -17,9 +21,32 @@ var assets embed.FS
 // //go:embed build/appicon.png
 // var icon []byte
 
+type FileLoader struct {
+	http.Handler
+}
+
+func NewFileLoader() *FileLoader {
+	return &FileLoader{}
+}
+
+func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var err error
+	requestedFilename := strings.TrimPrefix(req.URL.Path, "/")
+	println("Requesting file:", requestedFilename)
+	fileData, err := os.ReadFile(requestedFilename)
+	if err != nil {
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintf("Could not load file %s", requestedFilename)))
+	}
+
+	res.Write(fileData)
+}
+
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
+
+	modRoot, _ := app.GetModRootPath()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -28,8 +55,8 @@ func main() {
 		Height: 768,
 		// MinWidth:          1024,
 		// MinHeight:         768,
-		MaxWidth:          1280,
-		MaxHeight:         800,
+		//MaxWidth:          1280,
+		//MaxHeight:         800,
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,
@@ -38,6 +65,8 @@ func main() {
 		BackgroundColour:  &options.RGBA{R: 0, G: 0, B: 0, A: 255},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
+			//Handler: NewFileLoader(),
+			Handler: http.FileServer(http.Dir(modRoot)),
 		},
 		Menu:             nil,
 		Logger:           nil,

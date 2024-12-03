@@ -2,9 +2,13 @@
 package fs
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"mod_manager_next/backend/config"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func GetModFolders() ([]string, error) {
@@ -30,4 +34,82 @@ func GetModFolders() ([]string, error) {
 	}
 
 	return folders, nil
+}
+
+type PreviewImage struct {
+	Name string
+	Path string
+}
+
+type ModInfo struct {
+	Name    string
+	Preview PreviewImage
+}
+
+func findPreviewImage(dirPath string) (PreviewImage, error) {
+	var preview PreviewImage
+	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !d.IsDir() {
+			name := strings.ToLower(d.Name())
+			ext := filepath.Ext(name)
+
+			if strings.HasPrefix(name, "preview") && isSupportedImageExt(ext) {
+				// 전체 경로를 사용
+				preview = PreviewImage{
+					Name: d.Name(),
+					Path: path, // 여기가 변경된 부분입니다
+				}
+				return &fs.PathError{Op: "found", Err: nil}
+			}
+		}
+		return nil
+	})
+
+	var perr *fs.PathError
+	if errors.As(err, &perr) && perr.Op == "found" {
+		return preview, nil
+	}
+	if err != nil {
+		return preview, err
+	}
+	return preview, nil
+}
+
+func isSupportedImageExt(ext string) bool {
+	supportedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+		".avif": true,
+		".gif":  true,
+	}
+	return supportedExts[strings.ToLower(ext)]
+}
+
+func GetCharMods(path string) ([]ModInfo, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	var mods []ModInfo
+	for _, entry := range entries {
+		if entry.IsDir() {
+			modPath := filepath.Join(path, entry.Name())
+			preview, _ := findPreviewImage(modPath)
+
+			mod := ModInfo{
+				Name:    entry.Name(),
+				Preview: preview,
+			}
+			mods = append(mods, mod)
+		}
+	}
+
+	return mods, nil
 }

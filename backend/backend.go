@@ -40,3 +40,5 @@ func (cm *ConfigManager) GetTheme() (string, error) {
 func (fm *FSManager) GetModFolders() ([]string, error) {
 	return fs.GetModFolders()
 }
+
+func (fm *FSManager) GetCharMods(path string) ([]fs.ModInfo, error) { return fs.GetCharMods(path) }

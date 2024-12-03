@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"mod_manager_next/backend"
+	"mod_manager_next/backend/fs"
 	"mod_manager_next/backend/watcher"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -87,3 +88,5 @@ func (a *App) StartWatchingMods() error {
 
 	return a.watcher.Watch(rootPath, "mods-changed")
 }
+
+func (a *App) GetCharMods(path string) ([]fs.ModInfo, error) { return a.backend.FS.GetCharMods(path) }
