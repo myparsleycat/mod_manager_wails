@@ -1,14 +1,14 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "mod_manager_next",
-  "outputfilename": "mod_manager_next",
+  "name": "mod_manager_wails",
+  "outputfilename": "mod_manager_wails",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "wailsjsdir": "frontend/wailsjs",
   "author": {
-    "name": "myparsleycat@gmail.com",
-    "email": "withadne@gmail.com"
+    "name": "U149",
+    "email": "cashmerenahida@gmail.com"
   }
 }

@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { fs } from '@/wailsjs/wailsjs/go/models';
+import { EventsOff, EventsOn } from '@/wailsjs/wailsjs/runtime/runtime';
+import { toast } from 'sonner';
 
-const SearchInput = ({ value, onChange }: { 
-  value: string; 
-  onChange: (value: string) => void 
+const SearchInput = ({ value, onChange }: {
+  value: string;
+  onChange: (value: string) => void
 }) => (
   <div className="relative">
     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
     <input
-
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Search..."
@@ -21,7 +22,7 @@ const SearchInput = ({ value, onChange }: {
   </div>
 );
 
-const DirectoryList = ({ dirs, dirName }: { dirs: string[], dirName: string | null }) => {
+const DirectoryList = ({ dirs, dirName }: { dirs: fs.ModFolder[], dirName: string | null }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const getImageSrc = (index: number) => {
@@ -30,12 +31,12 @@ const DirectoryList = ({ dirs, dirName }: { dirs: string[], dirName: string | nu
     return '/center.jpg';
   };
 
-  const filteredDirs = dirs.filter(dir => 
-    dir.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDirs = dirs.filter(dir =>
+    dir.Name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedIndex = filteredDirs.findIndex(dir => dir === dirName);
-  
+  const selectedIndex = filteredDirs.findIndex(dir => dir.Name === dirName);
+
   const ITEM_PADDING = 8;
   const ITEM_HEIGHT = 64;
   const TOTAL_ITEM_HEIGHT = ITEM_HEIGHT + ITEM_PADDING;
@@ -43,7 +44,7 @@ const DirectoryList = ({ dirs, dirName }: { dirs: string[], dirName: string | nu
   return (
     <div className="flex flex-col h-full">
       <div className="p-2 border-b">
-        <SearchInput 
+        <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
         />
@@ -66,19 +67,18 @@ const DirectoryList = ({ dirs, dirName }: { dirs: string[], dirName: string | nu
               }}
             />
           )}
-          
+
           {filteredDirs.map((dir, index) => (
             <Link
-              key={dir}
-              href={`/mod?dirname=${dir}`}
-              style={{
-                height: TOTAL_ITEM_HEIGHT
-              }}
+              key={dir.Name}
+              href={`/mod?dirname=${dir.Name}&dirpath=${dir.Path}`}
+              style={{ height: TOTAL_ITEM_HEIGHT }}
               className={cn(
-                "w-full text-left p-2 rounded flex items-center gap-2 font-semibold text-base truncate",
-                "relative z-10",
-                dirName === dir && "text-accent-foreground"
-              )}>
+                "w-full text-left p-2 rounded flex items-center gap-2",
+                "relative z-10 truncate font-semibold text-base",
+                dirName === dir.Name && "text-accent-foreground"
+              )}
+            >
               <img
                 className="rounded-none"
                 alt="directory icon"
@@ -86,15 +86,9 @@ const DirectoryList = ({ dirs, dirName }: { dirs: string[], dirName: string | nu
                 width={64}
                 height={64}
               />
-              <span className="truncate">{dir}</span>
+              <span className="truncate">{dir.Name}</span>
             </Link>
           ))}
-
-          {/* {filteredDirs.length === 0 && (
-            <div className="text-center py-4 text-gray-500">
-              검색 결과가 없습니다
-            </div>
-          )} */}
         </div>
       </div>
     </div>

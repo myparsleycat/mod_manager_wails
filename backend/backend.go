@@ -37,10 +37,14 @@ func (cm *ConfigManager) GetTheme() (string, error) {
 	return config.GetTheme()
 }
 
-func (fm *FSManager) GetModFolders() ([]string, error) {
+func (fm *FSManager) GetModFolders() ([]fs.ModFolder, error) {
 	return fs.GetModFolders()
 }
 
 func (fm *FSManager) GetCharMods(path string) ([]fs.ModInfo, error) { return fs.GetCharMods(path) }
 
 func (fm *FSManager) SwitchModStatus(path string) error { return fs.SwitchModStatus(path) }
+
+func (fm *FSManager) OpenFolder(path string) error { return fs.OpenFolder(path) }
+
+func (fm *FSManager) DeleteFolder(path string) error { return fs.DeleteFolder(path) }

@@ -2,19 +2,25 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { GetCharMods, GetModRootPath } from '@/wailsjs/wailsjs/go/main/App'
+import { GetCharMods, GetModRootPath, StartWatchingOneLevelDirs, StopWatchingDir } from '@/wailsjs/wailsjs/go/main/App'
 import { fs } from '@/wailsjs/wailsjs/go/models';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getImgURL } from '@/utils';
 import ModItem from '@/components/ModItem';
 import { useAlertDialog } from "@/stores/useAlert";
+import { EventsOff, EventsOn } from '@/wailsjs/wailsjs/runtime/runtime';
+import { dir } from 'console';
 
 function ModPageContent() {
   const searchParams = useSearchParams()
   const dirName = searchParams.get('dirname')
+  const dirPath = searchParams.get('dirpath')
   const [mods, setMods] = useState<fs.ModInfo[] | null>()
   const { setAlert } = useAlertDialog();
+
+  let dirBtoa = '';
+  if (dirPath) dirBtoa = btoa(dirPath);
 
   async function getFullPath() {
     const modRootPath = await GetModRootPath()
@@ -42,15 +48,56 @@ function ModPageContent() {
     setMods(sortedMods);
   }
 
+  const handleDirectoryWatch = async () => {
+    try {
+      if (dirPath) {
+        const eventKey = await StartWatchingOneLevelDirs(dirPath);
+        return eventKey;
+      }
+    } catch (e: any) {
+      setAlert({
+        title: 'Error switching directory watch',
+        description: e.toString()
+      })
+    }
+  };
+
   useEffect(() => {
     getCharMods()
       .catch((e: any) => {
         setAlert({
-          title: '에러남',
+          title: '모드 정보 가져오기 실패',
           description: e.toString()
         })
       })
   }, [dirName])
+
+  useEffect(() => {
+    handleDirectoryWatch()
+      .then((eventKey) => {
+        if (eventKey) {
+          EventsOn(eventKey, async () => {
+            await getCharMods()
+          })
+
+          EventsOn('watcher-error', (errorMessage) => {
+            console.error('감시자 에러:', errorMessage)
+          })
+        }
+      })
+      .catch(() => {
+        location.href = '/'
+      });
+
+    return () => {
+      if (dirPath) {
+        StopWatchingDir(dirPath)
+          .catch(error => {
+            console.error('Error stopping directory watch:', error);
+          });
+      }
+    };
+  }, [dirPath])
 
   return (
     <div className="h-full w-full flex flex-col">

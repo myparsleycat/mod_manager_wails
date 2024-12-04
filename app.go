@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"mod_manager_next/backend"
 	"mod_manager_next/backend/fs"
 	"mod_manager_next/backend/server"
@@ -79,7 +80,7 @@ func (a *App) GetTheme() (string, error) {
 	return a.backend.Config.GetTheme()
 }
 
-func (a *App) GetModFolders() ([]string, error) {
+func (a *App) GetModFolders() ([]fs.ModFolder, error) {
 	return a.backend.FS.GetModFolders()
 }
 
@@ -95,3 +96,22 @@ func (a *App) StartWatchingMods() error {
 func (a *App) GetCharMods(path string) ([]fs.ModInfo, error) { return a.backend.FS.GetCharMods(path) }
 
 func (a *App) SwitchModStatus(path string) error { return a.backend.FS.SwitchModStatus(path) }
+
+func (a *App) OpenFolder(path string) error { return a.backend.FS.OpenFolder(path) }
+
+func (a *App) DeleteFolder(path string) error { return a.backend.FS.DeleteFolder(path) }
+
+func (a *App) StartWatchingOneLevelDirs(path string) (string, error) {
+	eventKey := fmt.Sprintf("dir-change:%s", path)
+
+	err := a.watcher.WatchOneLevel(path, eventKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to watch directory %s: %w", path, err)
+	}
+
+	return eventKey, nil
+}
+
+func (a *App) StopWatchingDir(path string) error {
+	return a.watcher.Unwatch(path)
+}

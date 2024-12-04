@@ -7,7 +7,9 @@ import (
 	"io/fs"
 	"mod_manager_next/backend/config"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -41,7 +43,12 @@ func LockForRead(path string) func() {
 	return defaultManager.RLockDirectory(path)
 }
 
-func GetModFolders() ([]string, error) {
+type ModFolder struct {
+	Name string
+	Path string
+}
+
+func GetModFolders() ([]ModFolder, error) {
 	rootPath, err := config.GetModRootPath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get mod root path: %w", err)
@@ -56,10 +63,13 @@ func GetModFolders() ([]string, error) {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}
 
-	var folders []string
+	var folders []ModFolder
 	for _, entry := range entries {
 		if entry.IsDir() {
-			folders = append(folders, entry.Name())
+			folders = append(folders, ModFolder{
+				Name: entry.Name(),
+				Path: filepath.Join(rootPath, entry.Name()),
+			})
 		}
 	}
 
@@ -249,3 +259,31 @@ func SwitchModStatus(path string) error {
 
 // 	return os.Rename(path, newPath)
 // }
+
+func OpenFolder(path string) error {
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("explorer", "/root,", path)
+	case "darwin":
+		cmd = exec.Command("open", path)
+	default:
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
+	}
+
+	err := cmd.Start()
+	if err != nil {
+		return fmt.Errorf("failed to open folder: %v", err)
+	}
+
+	return nil
+}
+
+func DeleteFolder(path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
+		return fmt.Errorf("폴더 삭제 중 오류 발생: %v", err)
+	}
+	return nil
+}

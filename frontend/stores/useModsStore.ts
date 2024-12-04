@@ -1,10 +1,11 @@
 // stores/useModsStore.ts
 import { create } from 'zustand'
+import { fs } from '@/wailsjs/wailsjs/go/models'
 
 interface ModsState {
-  dirs: string[]
+  dirs: fs.ModFolder[]
   isLoading: boolean
-  setDirs: (dirs: string[]) => void
+  setDirs: (dirs: fs.ModFolder[]) => void
   setIsLoading: (isLoading: boolean) => void
 }
 

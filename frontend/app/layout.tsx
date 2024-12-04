@@ -10,7 +10,11 @@ import { cn } from '@/lib/utils'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { type ReactNode, Suspense, useEffect } from 'react'
 import { EventsOff, EventsOn } from '@/wailsjs/wailsjs/runtime/runtime'
-import { GetModFolders, GetModRootPath, StartWatchingMods } from '@/wailsjs/wailsjs/go/main/App'
+import {
+  GetModFolders,
+  GetModRootPath,
+  StartWatchingMods
+} from '@/wailsjs/wailsjs/go/main/App'
 import { useModsStore } from '@/stores/useModsStore'
 import AlertDialogComponent from '@/components/AlertDialog'
 import DirectoryList from "@/components/DirList";
@@ -21,7 +25,7 @@ function RootLayoutInner({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams()
   const dirName = searchParams.get('dirname');
   const pathname = usePathname()
-  const { dirs, isLoading, setDirs, setIsLoading } = useModsStore()
+  const { dirs, setDirs, setIsLoading } = useModsStore()
 
   const fetchMods = async () => {
     try {
