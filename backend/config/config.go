@@ -8,9 +8,10 @@ import (
 )
 
 type Settings struct {
-	ModRootPath string `json:"modRootPath"`
-	Theme       string `json:"theme"`
-	Language    string `json:"language"`
+	ModRootPath    string `json:"modRootPath"`
+	Theme          string `json:"theme"`
+	Language       string `json:"language"`
+	ShowFolderIcon bool   `json:"showFolderIcon"`
 }
 
 func getSettingsPath() string {
@@ -81,4 +82,21 @@ func GetModRootPath() (string, error) {
 		return "", err
 	}
 	return settings.ModRootPath, nil
+}
+
+func SaveShowFolderIcon(show bool) error {
+	settings, err := Load()
+	if err != nil {
+		settings = Settings{}
+	}
+	settings.ShowFolderIcon = show
+	return Save(settings)
+}
+
+func GetShowFolderIcon() (bool, error) {
+	settings, err := Load()
+	if err != nil {
+		return false, err
+	}
+	return settings.ShowFolderIcon, nil
 }

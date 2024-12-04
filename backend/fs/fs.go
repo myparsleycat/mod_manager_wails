@@ -43,6 +43,7 @@ type PreviewImage struct {
 
 type ModInfo struct {
 	Name    string
+	Path    string
 	Preview PreviewImage
 }
 
@@ -94,7 +95,7 @@ func isSupportedImageExt(ext string) bool {
 func GetCharMods(path string) ([]ModInfo, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read directory: %w", err)
+		return []ModInfo{}, fmt.Errorf("failed to read directory: %w", err)
 	}
 
 	var mods []ModInfo
@@ -105,6 +106,7 @@ func GetCharMods(path string) ([]ModInfo, error) {
 
 			mod := ModInfo{
 				Name:    entry.Name(),
+				Path:    modPath,
 				Preview: preview,
 			}
 			mods = append(mods, mod)
@@ -112,4 +114,37 @@ func GetCharMods(path string) ([]ModInfo, error) {
 	}
 
 	return mods, nil
+}
+
+func SwitchModStatus(path string) error {
+	// 디렉토리가 존재하는지 확인
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("directory does not exist: %s", path)
+	}
+
+	// 마지막 디렉토리 이름 추출
+	dir := filepath.Base(path)
+	parentDir := filepath.Dir(path)
+
+	// 대소문자 구분없이 "disabled " 접두어 확인
+	const prefix = "disabled "
+	hasPrefix := strings.HasPrefix(strings.ToLower(dir), strings.ToLower(prefix))
+
+	var newPath string
+	if hasPrefix {
+		// "disabled " 제거 (원래 대소문자 상관없이)
+		idx := len(prefix)
+		newPath = filepath.Join(parentDir, dir[idx:])
+	} else {
+		// "DISABLED " 추가
+		newPath = filepath.Join(parentDir, "DISABLED "+dir)
+	}
+
+	// 디렉토리 이름 변경
+	err := os.Rename(path, newPath)
+	if err != nil {
+		return fmt.Errorf("failed to rename directory: %w", err)
+	}
+
+	return nil
 }

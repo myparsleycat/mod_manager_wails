@@ -73,26 +73,19 @@ function RootLayoutInner({ children }: { children: ReactNode }) {
   return (
     <div className="h-screen flex">
       <aside className="flex flex-col w-64 flex-shrink-0">
-        <div className="flex items-center p-2 gap-2">
-          <input className='p-2 outline-none rounded-xl border'/>
-          <button className="p-1">
-            <RotateCcwIcon size={16}/>
-          </button>
-        </div>
-
         <div className="flex-grow overflow-x-hidden p-2 w-full">
-          <DirectoryList dirs={dirs} dirName={dirName}/>
+          <DirectoryList dirs={dirs} dirName={dirName} />
         </div>
         <ul className="mt-auto p-4 border-t">
           <li>
             <button className="w-full text-left p-2 rounded flex items-center gap-2">
-              <PlayIcon size={16}/>
+              <PlayIcon size={16} />
               Run 3DMigoto
             </button>
           </li>
           <li>
             <button className="w-full text-left p-2 rounded flex items-center gap-2">
-              <RocketIcon size={16}/>
+              <RocketIcon size={16} />
               Run launcher
             </button>
           </li>
@@ -103,7 +96,7 @@ function RootLayoutInner({ children }: { children: ReactNode }) {
                 "w-full text-left p-2 rounded flex items-center gap-2",
                 pathname === "/settings" && "bg-black/20 dark:bg-white/20 text-accent-foreground"
               )}>
-              <SettingsIcon size={16}/>
+              <SettingsIcon size={16} />
               Settings
             </Link>
           </li>
@@ -119,15 +112,15 @@ function RootLayoutInner({ children }: { children: ReactNode }) {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
-    <body className={inter.className}>
-    <Toaster richColors position="bottom-center"/>
-    <AlertDialogComponent/>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <Suspense fallback={<div>로딩중...</div>}>
-        <RootLayoutInner>{children}</RootLayoutInner>
-      </Suspense>
-    </ThemeProvider>
-    </body>
+      <body className={cn(inter.className, 'select-none')}>
+        <Toaster richColors position="bottom-center" />
+        <AlertDialogComponent />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Suspense fallback={<div>로딩중...</div>}>
+            <RootLayoutInner>{children}</RootLayoutInner>
+          </Suspense>
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

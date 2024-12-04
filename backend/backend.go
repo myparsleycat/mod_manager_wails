@@ -42,3 +42,5 @@ func (fm *FSManager) GetModFolders() ([]string, error) {
 }
 
 func (fm *FSManager) GetCharMods(path string) ([]fs.ModInfo, error) { return fs.GetCharMods(path) }
+
+func (fm *FSManager) SwitchModStatus(path string) error { return fs.SwitchModStatus(path) }

@@ -93,3 +93,5 @@ func (a *App) StartWatchingMods() error {
 }
 
 func (a *App) GetCharMods(path string) ([]fs.ModInfo, error) { return a.backend.FS.GetCharMods(path) }
+
+func (a *App) SwitchModStatus(path string) error { return a.backend.FS.SwitchModStatus(path) }
