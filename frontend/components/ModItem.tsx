@@ -16,7 +16,7 @@ const ModItem = ({ mod, getCharMods }: { mod: fs.ModInfo, getCharMods: () => voi
       .catch((e: any) => {
         setAlert({
           title: '에러남',
-          description: e.message
+          description: e.toString()
         })
       })
   }

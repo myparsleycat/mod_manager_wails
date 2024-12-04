@@ -47,7 +47,7 @@ function ModPageContent() {
       .catch((e: any) => {
         setAlert({
           title: '에러남',
-          description: e.message
+          description: e.toString()
         })
       })
   }, [dirName])

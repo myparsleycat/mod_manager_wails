@@ -1,93 +1,88 @@
 // backend/server/server.go
-
 package server
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"os"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 )
 
 type Server struct {
-	server *http.Server
-	port   string
+	app  *fiber.App
+	port string
 }
 
-// New creates a new server instance
 func New(port string) *Server {
+	app := fiber.New(fiber.Config{
+		// 큰 파일 처리를 위한 설정
+		StreamRequestBody: true,
+		BodyLimit:         100 * 1024 * 1024, // 100MB
+	})
+
+	// GZIP 압축 활성화
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestSpeed,
+	}))
+
 	return &Server{
+		app:  app,
 		port: port,
 	}
 }
 
-// Start begins the server
 func (s *Server) Start(ctx context.Context) error {
-	mux := http.NewServeMux()
+	s.setupRoutes()
 
-	mux.HandleFunc("/api/img", s.handleImage)
-	mux.HandleFunc("/api/nahida", s.handleNahida)
-
-	s.server = &http.Server{
-		Addr:    ":" + s.port,
-		Handler: mux,
-	}
-
-	// 서버 종료 처리
+	// 컨텍스트 취소시 서버 종료
 	go func() {
 		<-ctx.Done()
-		s.server.Shutdown(context.Background())
+		s.app.Shutdown()
 	}()
 
-	// 서버 시작
-	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		return err
-	}
-
-	return nil
+	return s.app.Listen(":" + s.port)
 }
 
-// handleImage handles image requests
-func (s *Server) handleImage(w http.ResponseWriter, r *http.Request) {
-	imagePath := r.URL.Query().Get("path")
+func (s *Server) setupRoutes() {
+	s.app.Get("/api/img", s.handleImage)
+	s.app.Get("/api/nahida", s.handleNahida)
+}
+
+func (s *Server) handleImage(c *fiber.Ctx) error {
+	imagePath := c.Query("path")
 	if imagePath == "" {
-		http.Error(w, "Image path is required", http.StatusBadRequest)
-		return
+		return c.Status(fiber.StatusBadRequest).SendString("Image path is required")
 	}
 
-	// 파일 존재 여부 확인
-	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
-		http.Error(w, "Image not found", http.StatusNotFound)
-		return
-	}
-
-	// 파일 읽기
-	file, err := os.Open(imagePath)
+	// 파일을 메모리에 읽어들임
+	data, err := os.ReadFile(imagePath)
 	if err != nil {
-		http.Error(w, "Failed to open image", http.StatusInternalServerError)
-		return
+		return c.Status(fiber.StatusNotFound).SendString("Image not found")
 	}
-	defer file.Close()
 
-	// 이미지 타입 감지
-	buffer := make([]byte, 512)
-	_, err = file.Read(buffer)
-	if err != nil {
-		http.Error(w, "Failed to read image", http.StatusInternalServerError)
-		return
-	}
-	contentType := http.DetectContentType(buffer)
-
-	// 파일 포인터를 다시 처음으로
-	file.Seek(0, 0)
-
-	// 응답 헤더 설정
-	w.Header().Set("Content-Type", contentType)
-
-	// 이미지 데이터 전송
-	io.Copy(w, file)
+	// 메모리에서 직접 전송
+	return c.Send(data)
 }
 
-func (s *Server) handleNahida(w http.ResponseWriter, r *http.Request) {
+// func (s *Server) handleImage(c *fiber.Ctx) error {
+// 	imagePath := c.Query("path")
+// 	if imagePath == "" {
+// 		return c.Status(fiber.StatusBadRequest).SendString("Image path is required")
+// 	}
 
+// 	// 읽기 잠금 획득
+// 	unlock := fs.LockForRead(imagePath)
+// 	defer unlock()
+
+// 	// 파일 존재 확인
+// 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+// 		return c.Status(fiber.StatusNotFound).SendString("Image not found")
+// 	}
+
+// 	return c.SendFile(imagePath, true)
+// }
+
+func (s *Server) handleNahida(c *fiber.Ctx) error {
+	return nil
 }

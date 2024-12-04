@@ -9,7 +9,37 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
+
+type DirectoryManager struct {
+	locks sync.Map
+}
+
+var defaultManager = &DirectoryManager{}
+
+func (dm *DirectoryManager) getLock(path string) *sync.RWMutex {
+	dirPath := filepath.Dir(path)
+	actual, _ := dm.locks.LoadOrStore(dirPath, &sync.RWMutex{})
+	return actual.(*sync.RWMutex)
+}
+
+// LockDirectory 디렉토리에 대한 쓰기 잠금을 획득
+func (dm *DirectoryManager) LockDirectory(path string) func() {
+	dm.getLock(path).Lock()
+	return func() { dm.getLock(path).Unlock() }
+}
+
+// RLockDirectory 디렉토리에 대한 읽기 잠금을 획득
+func (dm *DirectoryManager) RLockDirectory(path string) func() {
+	dm.getLock(path).RLock()
+	return func() { dm.getLock(path).RUnlock() }
+}
+
+// LockForRead 파일 읽기를 위한 잠금 획득 (exported function)
+func LockForRead(path string) func() {
+	return defaultManager.RLockDirectory(path)
+}
 
 func GetModFolders() ([]string, error) {
 	rootPath, err := config.GetModRootPath()
@@ -116,6 +146,52 @@ func GetCharMods(path string) ([]ModInfo, error) {
 	return mods, nil
 }
 
+// var (
+// 	kernel32  = syscall.NewLazyDLL("kernel32.dll")
+// 	moveFileW = kernel32.NewProc("MoveFileW")
+// )
+
+// func utf16PtrFromString(s string) *uint16 {
+// 	p, _ := syscall.UTF16PtrFromString(s)
+// 	return p
+// }
+
+// func SwitchModStatus(path string) error {
+// 	// 디렉토리 존재 확인
+// 	if _, err := os.Stat(path); os.IsNotExist(err) {
+// 		return fmt.Errorf("directory does not exist: %s", path)
+// 	}
+
+// 	dir := filepath.Base(path)
+// 	parentDir := filepath.Dir(path)
+
+// 	const prefix = "disabled "
+// 	hasPrefix := strings.HasPrefix(strings.ToLower(dir), strings.ToLower(prefix))
+
+// 	var newPath string
+// 	if hasPrefix {
+// 		idx := len(prefix)
+// 		newPath = filepath.Join(parentDir, dir[idx:])
+// 	} else {
+// 		newPath = filepath.Join(parentDir, "DISABLED "+dir)
+// 	}
+
+// 	// Windows API를 직접 호출
+// 	lpExistingFileName := utf16PtrFromString(path)
+// 	lpNewFileName := utf16PtrFromString(newPath)
+
+// 	ret, _, err := moveFileW.Call(
+// 		uintptr(unsafe.Pointer(lpExistingFileName)),
+// 		uintptr(unsafe.Pointer(lpNewFileName)),
+// 	)
+
+// 	if ret == 0 {
+// 		return fmt.Errorf("failed to rename directory using Windows API: %v", err)
+// 	}
+
+// 	return nil
+// }
+
 func SwitchModStatus(path string) error {
 	// 디렉토리가 존재하는지 확인
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -148,3 +224,28 @@ func SwitchModStatus(path string) error {
 
 	return nil
 }
+
+// func SwitchModStatus(path string) error {
+// 	unlock := defaultManager.LockDirectory(path)
+// 	defer unlock()
+
+// 	if _, err := os.Stat(path); os.IsNotExist(err) {
+// 		return fmt.Errorf("directory does not exist: %s", path)
+// 	}
+
+// 	dir := filepath.Base(path)
+// 	parentDir := filepath.Dir(path)
+
+// 	const prefix = "disabled "
+// 	hasPrefix := strings.HasPrefix(strings.ToLower(dir), strings.ToLower(prefix))
+
+// 	var newPath string
+// 	if hasPrefix {
+// 		idx := len(prefix)
+// 		newPath = filepath.Join(parentDir, dir[idx:])
+// 	} else {
+// 		newPath = filepath.Join(parentDir, "DISABLED "+dir)
+// 	}
+
+// 	return os.Rename(path, newPath)
+// }
