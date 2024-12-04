@@ -3,9 +3,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"mod_manager_next/backend"
 	"mod_manager_next/backend/fs"
+	"mod_manager_next/backend/server"
 	"mod_manager_next/backend/watcher"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -31,6 +31,13 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 	a.watcher = w
+
+	srv := server.New("24312")
+	go func() {
+		if err := srv.Start(ctx); err != nil {
+			runtime.LogError(ctx, "Server error: "+err.Error())
+		}
+	}()
 }
 
 func (a App) domReady(ctx context.Context) {
@@ -46,10 +53,6 @@ func (a *App) shutdown(ctx context.Context) {
 			runtime.LogError(ctx, "Failed to close watcher: "+err.Error())
 		}
 	}
-}
-
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
 
 func (a *App) SelectDirectory() (string, error) {

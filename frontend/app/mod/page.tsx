@@ -34,9 +34,8 @@ function ModPageContent() {
     })
   }, [dirName])
 
-  // 전체 경로에서 rootPath를 제거해서 상대 경로 얻기
-  const getRelativePath = (fullPath: string) => {
-    return fullPath.replace(rootPath, '').replace(/\\/g, '/')
+  const getImgURL = (imgPath: string) => {
+    return 'http://localhost:24312/api/img?path=' + imgPath
   }
 
   return (
@@ -60,7 +59,7 @@ function ModPageContent() {
                 <div className="aspect-video">
                   {mod.Preview.Path && (
                     <img
-                      src={getRelativePath(mod.Preview.Path)}
+                      src={getImgURL(mod.Preview.Path)}
                       alt={`Preview of ${mod.Name}`}
                       className="w-full h-full object-cover rounded"
                     />
