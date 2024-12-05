@@ -22,20 +22,20 @@ const SearchInput = ({ value, onChange }: {
   </div>
 );
 
-const DirectoryList = ({ dirs, dirName }: { dirs: fs.ModFolder[], dirName: string | null }) => {
+const DirectoryList = ({ dirs, dirName }: { dirs: fs.ModFolder[] | null, dirName: string | null }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const getImageSrc = (index: number) => {
     if (index === 0) return '/top.jpg';
-    if (index === dirs.length - 1) return '/bottom.jpg';
+    if (dirs && index === dirs.length - 1) return '/bottom.jpg';
     return '/center.jpg';
   };
 
-  const filteredDirs = dirs.filter(dir =>
+  const filteredDirs = dirs && dirs.filter(dir =>
     dir.Name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || []
 
-  const selectedIndex = filteredDirs.findIndex(dir => dir.Name === dirName);
+  const selectedIndex = filteredDirs.findIndex(dir => dir.Name === dirName)
 
   const ITEM_PADDING = 8;
   const ITEM_HEIGHT = 64;
